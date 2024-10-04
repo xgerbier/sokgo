@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Sokgo": {
+      "commandName": "Project",
+      "commandLineArgs": "--daemon"
+    }
+  }
+}

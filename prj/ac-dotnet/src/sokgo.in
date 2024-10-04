@@ -1,0 +1,2 @@
+#!/bin/sh
+exec @RUNTIME@ @pkgdatadir@/@PACKAGE@@TARGET_EXT@ $@

@@ -1,0 +1,57 @@
+Install for Ubuntu
+------------------
+
+Supported .NET environments :
+  - Dotnet SDK package
+  - Dotnet SDK snap
+  - Mono Devel
+
+1. Required packages
+1.1. with Dotnet SDK package :
+  - build-essential
+  - automake
+  - pkgconf
+  - dotnet-sdk-8.0
+
+  sudo apt install build-essential automake pkgconf dotnet-sdk-8.0
+
+1.2. with Dotnet SDK snap :
+  - build-essential
+  - automake
+  - pkgconf
+  - snap : dotnet-sdk (classic)
+
+  sudo apt install build-essential automake pkgconf
+  sudo snap install dotnet-sdk --classic
+
+1.3. with Mono Devel :
+  - build-essential
+  - automake
+  - pkgconf
+  - libtool
+  - mono-devel
+
+  sudo apt install build-essential automake pkgconf libtool mono-devel
+
+2. Generate makefiles
+  - Dotnet SDK :
+    ./prj/ac-dotnet/autogen.sh [--enable-debug]
+
+  - Mono Devel :
+    ./prj/ac-mono/autogen.sh [--enable-debug]
+
+3. Build binaries
+  make
+
+4. Install binaries (need privilege)
+  sudo make install
+
+5. Edit config file (need privilege)
+  sudo nano /usr/local/etc/sokgo.config
+
+6. Start daemon (need privilege)
+  - systemd service :
+    sudo systemctl start sokgo.service
+
+  - System-V :
+    sudo /etc/init.d/sokgo start

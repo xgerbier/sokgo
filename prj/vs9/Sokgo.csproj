@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{84B826DB-6F36-4C01-9D93-C0A750B385A7}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Sokgo</RootNamespace>
+    <AssemblyName>sokgo</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <StartupObject>
+    </StartupObject>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <PropertyGroup>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\Arguments\Arguments.cs">
+      <Link>Arguments\Arguments.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Controller\ControlClient.cs">
+      <Link>Controller\ControlClient.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Controller\ControlEnum.cs">
+      <Link>Controller\ControlEnum.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Controller\ControlServer.cs">
+      <Link>Controller\ControlServer.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\IPFilter\IPFilterLocal.cs">
+      <Link>IPFilter\IPFilterLocal.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Properties\AssemblyInfo.cs">
+      <Link>Properties\AssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Config.cs">
+      <Link>Socks5\Socks5Config.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Connector.cs">
+      <Link>Socks5\Socks5Connector.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5ConnectorFactory.cs">
+      <Link>Socks5\Socks5ConnectorFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5ConnectorTcp.cs">
+      <Link>Socks5\Socks5ConnectorTcp.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5ConnectorUdp.cs">
+      <Link>Socks5\Socks5ConnectorUdp.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Dns.cs">
+      <Link>Socks5\Socks5Dns.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Enum.cs">
+      <Link>Socks5\Socks5Enum.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5IPEndPointReader.cs">
+      <Link>Socks5\Socks5IPEndPointReader.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5IPEndPointWriter.cs">
+      <Link>Socks5\Socks5IPEndPointWriter.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Server.cs">
+      <Link>Socks5\Socks5Server.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Session.cs">
+      <Link>Socks5\Socks5Session.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5SessionGroup.cs">
+      <Link>Socks5\Socks5SessionGroup.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5SocketList.cs">
+      <Link>Socks5\Socks5SocketList.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Sokgo.cs">
+      <Link>Sokgo.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SokgoUnix.cs">
+      <Link>SokgoUnix.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SokgoWin32.cs">
+      <Link>SokgoWin32.cs</Link>
+    </Compile>
+	 <Compile Include="..\..\src\Properties\BuildId.cs">
+      <Link>Properties\BuildId.cs</Link>
+    </Compile>
+    <None Include="..\..\src\Properties\BuildId-update.sh">
+      <Link>Properties\BuildId-update.sh</Link>
+    </None>
+    <None Include="..\..\src\Properties\BuildId.cs.in">
+      <Link>Properties\BuildId.cs.in</Link>
+    </None>
+    <None Include="..\..\src\Properties\AssemblyInfo-update.sh">
+      <Link>Properties\AssemblyInfo-update.sh</Link>
+    </None>
+    <None Include="..\..\src\Properties\AssemblyInfo.cs.in">
+      <Link>Properties\AssemblyInfo.cs.in</Link>
+    </None>
+    <Compile Include="..\..\src\Trace.cs">
+      <Link>Trace.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\app.config">
+      <Link>app.config</Link>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\src\Arguments\README.TXT">
+      <Link>Arguments\README.TXT</Link>
+    </Content>
+    <Content Include="..\..\src\Arguments\URL.TXT">
+      <Link>Arguments\URL.TXT</Link>
+    </Content>
+    <Content Include="..\..\src\Properties\README.TXT">
+      <Link>Properties\README.TXT</Link>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PreBuildEvent>
+		sh $(ProjectDir)..\..\src\Properties\BuildId-update.sh
+	  </PreBuildEvent>
+  </PropertyGroup>
+</Project>

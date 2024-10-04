@@ -1,0 +1,189 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <StartupObject>Sokgo.Sokgo</StartupObject>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <!--BootstrapperEnabled>true</BootstrapperEnabled-->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\..\bin\Release\</OutputPath>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
+  </PropertyGroup>
+	<!--ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup-->
+  <ItemGroup>
+    <Compile Include="..\..\src\Arguments\Arguments.cs">
+      <Link>Arguments\Arguments.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Controller\ControlClient.cs">
+      <Link>Controller\ControlClient.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Controller\ControlEnum.cs">
+      <Link>Controller\ControlEnum.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Controller\ControlServer.cs">
+      <Link>Controller\ControlServer.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\IPFilter\IPFilterLocal.cs">
+      <Link>IPFilter\IPFilterLocal.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Properties\AssemblyInfo.cs">
+      <Link>Properties\AssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Config.cs">
+      <Link>Socks5\Socks5Config.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Connector.cs">
+      <Link>Socks5\Socks5Connector.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5ConnectorFactory.cs">
+      <Link>Socks5\Socks5ConnectorFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5ConnectorTcp.cs">
+      <Link>Socks5\Socks5ConnectorTcp.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5ConnectorUdp.cs">
+      <Link>Socks5\Socks5ConnectorUdp.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Dns.cs">
+      <Link>Socks5\Socks5Dns.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Enum.cs">
+      <Link>Socks5\Socks5Enum.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5IPEndPointReader.cs">
+      <Link>Socks5\Socks5IPEndPointReader.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5IPEndPointWriter.cs">
+      <Link>Socks5\Socks5IPEndPointWriter.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Server.cs">
+      <Link>Socks5\Socks5Server.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5Session.cs">
+      <Link>Socks5\Socks5Session.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5SessionGroup.cs">
+      <Link>Socks5\Socks5SessionGroup.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Socks5\Socks5SocketList.cs">
+      <Link>Socks5\Socks5SocketList.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Sokgo.cs">
+      <Link>Sokgo.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SokgoUnix.cs">
+      <Link>SokgoUnix.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\SokgoWin32.cs">
+      <Link>SokgoWin32.cs</Link>
+    </Compile>
+	 <Compile Include="..\..\src\Properties\BuildId.cs">
+      <Link>Properties\BuildId.cs</Link>
+    </Compile>
+    <None Include="..\..\src\Properties\BuildId-update.sh">
+      <Link>Properties\BuildId-update.sh</Link>
+    </None>
+    <None Include="..\..\src\Properties\BuildId.cs.in">
+      <Link>Properties\BuildId.cs.in</Link>
+    </None>
+    <Compile Include="..\..\src\Trace.cs">
+      <Link>Trace.cs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\app.config">
+      <Link>app.config</Link>
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\src\Arguments\README.TXT">
+      <Link>Arguments\README.TXT</Link>
+    </Content>
+    <Content Include="..\..\src\Arguments\URL.TXT">
+      <Link>Arguments\URL.TXT</Link>
+    </Content>
+    <Content Include="..\..\src\Properties\README.TXT">
+      <Link>Properties\README.TXT</Link>
+    </Content>
+  </ItemGroup>
+  <PropertyGroup>
+    <!--PreBuildEvent>
+    sh $(ProjectDir)../../src/Properties/BuildId-update.sh
+    </PreBuildEvent-->
+    <ApplicationIcon />
+    <Win32Resource />
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <!--PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
+    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Timer" Version="4.3.0" /-->
+  </ItemGroup>
+	<!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+    -->
+  <Target Name="UpdateBuildId" AfterTargets="BeforeBuild">
+	  <Message Text="Update BuildId ($(OS))" Importance="high" />
+	  <Exec Condition=" '$(OS)' == 'Windows_NT'" Command="
+      set FILE_SH=sh.exe
+      where %FILE_SH% &gt; NUL 2&gt; NUL
+      if errorlevel 1 (
+        for /D %%p in ( &quot;%ProgramFiles%\Git\bin&quot;, &quot;%ProgramFiles%\Git\cmd&quot;, &quot;%ProgramFiles(x86)%\Git\bin&quot;, &quot;%ProgramFiles(x86)%\Git\cmd&quot;, &quot;C:\MinGW\bin&quot; ) do (
+          if not defined SH if exist &quot;%%p\%FILE_SH%&quot; set SH=%%p\%FILE_SH%
+        )
+      ) else (
+        set SH=%FILE_SH%
+      )
+      if not defined SH ( echo Warning : &quot;%FILE_SH%&quot; not found. Failed to update BuildId.  &amp; exit /b 0 )
+      %SH% &quot;$(ProjectDir)../../src/Properties/BuildId-update.sh&quot;
+	    " />
+	  <Exec Condition=" '$(OS)' == 'Unix'" Command="$(ProjectDir)../../src/Properties/BuildId-update.sh" />
+  </Target>
+</Project>

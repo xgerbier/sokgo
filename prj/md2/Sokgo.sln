@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sokgo", "Sokgo.csproj", "{84B826DB-6F36-4C01-9D93-C0A750B385A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84B826DB-6F36-4C01-9D93-C0A750B385A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84B826DB-6F36-4C01-9D93-C0A750B385A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84B826DB-6F36-4C01-9D93-C0A750B385A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84B826DB-6F36-4C01-9D93-C0A750B385A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Sokgo.csproj
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

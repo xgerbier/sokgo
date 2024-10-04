@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+#	Copyright (C) 2011,2012,2013,2024 X.Gerbier
+#
+#	This file is part of Sokgo.
+#
+#	Sokgo is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+#	(at your option) any later version.
+#
+#	Sokgo is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with Sokgo.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+### BEGIN INIT INFO
+# Provides:        @PACKAGE@
+# Required-Start:  $network $remote_fs $syslog
+# Required-Stop:   $network $remote_fs $syslog
+# Default-Start:   2 3 4 5
+# Default-Stop:    0 1 6
+# Short-Description: Start Sokgo daemon
+### END INIT INFO
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+. /lib/lsb/init-functions
+
+DAEMON=@bindir@/@PACKAGE@
+PIDFILE=/var/run/@PACKAGE@.pid
+
+test -x $DAEMON || exit 5
+
+case $1 in
+	start)
+		log_daemon_msg "Starting Sokgo server"
+  		start-stop-daemon --start --quiet --pidfile $PIDFILE --startas $DAEMON --chuid root -- --start --quiet
+		log_end_msg $?
+  		;;
+	stop)
+		log_daemon_msg "Stopping Sokgo server"
+  		start-stop-daemon --stop --quiet --pidfile $PIDFILE --chuid root
+		log_end_msg $?
+		rm -f $PIDFILE
+  		;;
+	restart|force-reload)
+		$0 stop && sleep 2 && $0 start
+  		;;
+	try-restart)
+		if $0 status >/dev/null; then
+			$0 restart
+		else
+			exit 0
+		fi
+		;;
+	reload)
+		exit 3
+		;;
+	status)
+		status_of_proc $DAEMON "Sokgo server"
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
+		exit 2
+		;;
+esac

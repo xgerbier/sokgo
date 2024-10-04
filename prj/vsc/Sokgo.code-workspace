@@ -1,0 +1,88 @@
+{
+	"folders": [
+		{
+			"path": "../../src"
+		}
+	],
+	"settings": {
+		"dotnet.defaultSolution": "../prj/vs17/Sokgo.sln",
+		"git.openRepositoryInParentFolders": "always",
+		"cSpell.words": [
+			"asmb",
+			"bindremote",
+			"Cdecl",
+			"closelog",
+			"consoleloggerparameters",
+			"consts",
+			"coreclr",
+			"csdevkit",
+			"datagram",
+			"Dgram",
+			"dotnettools",
+			"endp",
+			"FORCEGC",
+			"Gerbier",
+			"getpid",
+			"githash",
+			"Grps",
+			"gssapi",
+			"libc",
+			"openlog",
+			"optlen",
+			"optname",
+			"optval",
+			"PIDFILE",
+			"Posix",
+			"setsid",
+			"setsockopt",
+			"sockfd",
+			"Sokgo",
+			"svnrev",
+			"Syscall",
+			"vuze",
+			"Winapi",
+			"μtorrent"
+		],
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-dotnettools.csdevkit",
+			"ms-dotnettools.csharp"
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": ".NET Core 8.0 Launch (console)",
+				"type": "coreclr",
+				"request": "launch",
+				"preLaunchTask": "${defaultBuildTask}",
+				"program": "${workspaceFolder}/../bin/Debug/net8.0/Sokgo.dll",
+				"args": ["--daemon"],
+				"cwd": "${workspaceFolder}",
+				"stopAtEntry": false,
+				"console": "internalConsole"
+			}
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"type": "shell",
+				"command": "dotnet build '${workspaceFolder}/../prj/vs17/Sokgo.csproj' /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary",
+				"group": {
+					"kind": "build",
+					"isDefault": true
+				},
+				"label": "dotnet: build"
+			},
+			{
+				"type": "shell",
+				"command": "echo ${workspaceFolder}",
+				"label": "echo"
+			}
+		]
+	}
+}

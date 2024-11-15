@@ -25,7 +25,7 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Sokgo.IPFilter
+namespace Sokgo.Filter
 {
 	class IPFilterLocal
 	{
@@ -33,7 +33,7 @@ namespace Sokgo.IPFilter
 		// Private network		: https://en.wikipedia.org/wiki/Private_network
 		// Unique local address	: https://en.wikipedia.org/wiki/Unique_local_address
 		// Link-local address	: https://en.wikipedia.org/wiki/Link-local_address
-		public static bool Check(IPAddress ip)
+		public static bool IsLocal(IPAddress ip)
 		{
 			byte[] ipData= ip.GetAddressBytes();
 

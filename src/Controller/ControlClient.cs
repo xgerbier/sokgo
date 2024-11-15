@@ -107,6 +107,7 @@ namespace Sokgo.Controller
 			if ((m_sock != null) && (m_sock.Connected))
 				return;
 
+			// when server is running, socket will initialize successfully
 			m_sock= new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			try
 			{

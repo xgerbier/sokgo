@@ -13,7 +13,7 @@ namespace Sokgo.Socks5
 
 	class Socks5Dns
 	{
-		// inner classes
+		// inner class(es)/struct(s)
 		protected class Entry
 		{
 
@@ -71,7 +71,7 @@ namespace Sokgo.Socks5
 		}
 		protected const int MAX_LOCAL_SOCKET_WAIT	= 10 * 1000;	// ms
 		protected const int MAX_RESOLVE_TIMEOUT		= 2 * 1000;		// ms
-		protected const int NB_THREAD				= 4;	
+		protected const int NB_THREAD				= 4;
 		protected const int THRESHOLD_WAIT_ENTRY	= 16;
 
 		// data members

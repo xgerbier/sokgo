@@ -19,8 +19,6 @@
 */
 #endregion
 
-#define TRACE_SELECT
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,6 +30,8 @@ using System.Configuration;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Linq;
+using Sokgo.Port;
 
 namespace Sokgo.Socks5
 {
@@ -61,6 +61,12 @@ namespace Sokgo.Socks5
 		protected static bool m_bIpV6ListenDone				= false;
 		protected static bool m_bIpOutgoingDone				= false;
 		protected static bool m_bIpV6OutgoingDone			= false;
+		protected static Object m_csIpListen				= new Object();	// critical sections
+		protected static Object m_csIpV6Listen				= new Object();
+		protected static Object m_csIpOutgoing				= new Object();
+		protected static Object m_csIpV6Outgoing			= new Object();
+		protected static PortRange							m_udpPortRange	= null;
+		protected static PortMapping						m_outgoingUdpPorts = null;
 		protected Socks5SocketList m_sockSelectReads		= new Socks5SocketList(SELECT_MIN_CAPACITY);
 
 		// constructor(s)
@@ -130,20 +136,26 @@ namespace Sokgo.Socks5
 
 		public static IPAddress GetListenIPv4Address()
 		{
-			if (!m_bIpListenDone)
+			lock (m_csIpListen)
 			{
-				m_ipListen= GetIPAddress(Config.ListenHost, AddressFamily.InterNetwork);
-				m_bIpListenDone= true;
+				if (!m_bIpListenDone)
+				{
+					m_ipListen= GetIPAddress(Config.ListenHost, AddressFamily.InterNetwork);
+					m_bIpListenDone= true;
+				}
 			}
 			return m_ipListen;
 		}
 
 		public static IPAddress GetListenIPv6Address()
 		{
-			if (!m_bIpV6ListenDone)
+			lock (m_csIpV6Listen)
 			{
-				m_ipV6Listen= GetIPAddress(Config.ListenHostIPv6, AddressFamily.InterNetworkV6);
-				m_bIpV6ListenDone= true;
+				if (!m_bIpV6ListenDone)
+				{
+					m_ipV6Listen= GetIPAddress(Config.ListenHostIPv6, AddressFamily.InterNetworkV6);
+					m_bIpV6ListenDone= true;
+				}
 			}
 			return m_ipV6Listen;
 		}
@@ -155,22 +167,28 @@ namespace Sokgo.Socks5
 
 		public static IPAddress GetOutgoingIPv4Address()
 		{
-			if (!m_bIpOutgoingDone)
+			lock (m_csIpOutgoing)
 			{
-				String strOutgoingHost= Config.OutgoingHost;
-				m_ipOutgoing= ((strOutgoingHost.Length > 0) ? GetIPAddress(strOutgoingHost, AddressFamily.InterNetwork) : GetListenIPv4Address());
-				m_bIpOutgoingDone= true;
+				if (!m_bIpOutgoingDone)
+				{
+					String strOutgoingHost= Config.OutgoingHost;
+					m_ipOutgoing= ((strOutgoingHost.Length > 0) ? GetIPAddress(strOutgoingHost, AddressFamily.InterNetwork) : GetListenIPv4Address());
+					m_bIpOutgoingDone= true;
+				}
 			}
 			return m_ipOutgoing;
 		}
 
 		public static IPAddress GetOutgoingIPv6Address()
 		{
-			if (!m_bIpV6OutgoingDone)
+			lock (m_csIpV6Outgoing)
 			{
-				String strOutgoingHostIPv6= Config.OutgoingHostIPv6;
-				m_ipV6Outgoing= ((strOutgoingHostIPv6.Length > 0) ? GetIPAddress(strOutgoingHostIPv6, AddressFamily.InterNetworkV6) : GetListenIPv6Address());
-				m_bIpV6OutgoingDone= true;
+				if (!m_bIpV6OutgoingDone)
+				{
+					String strOutgoingHostIPv6= Config.OutgoingHostIPv6;
+					m_ipV6Outgoing= ((strOutgoingHostIPv6.Length > 0) ? GetIPAddress(strOutgoingHostIPv6, AddressFamily.InterNetworkV6) : GetListenIPv6Address());
+					m_bIpV6OutgoingDone= true;
+				}
 			}
 			return m_ipV6Outgoing;
 		}
@@ -178,6 +196,25 @@ namespace Sokgo.Socks5
 		public static IPAddress GetOutgoingIPAddress(AddressFamily af)
 		{
 			return (af == AddressFamily.InterNetworkV6) ? GetOutgoingIPv6Address() : GetOutgoingIPv4Address();
+		}
+
+		public static ushort GetOutgoingUdpPortRangeMin()
+		{
+			return (ushort)Config.OutgoingUdpPortRangeMin;
+		}
+
+
+		public static ushort GetOutgoingUdpPortRangeMax()
+		{
+			return (ushort)Config.OutgoingUdpPortRangeMax;
+		}
+
+		public static bool BindOutgoingUdpSocket(Socket sock, IPAddress ip, IPEndPoint incomingPort)
+		{
+			if (m_outgoingUdpPorts == null)
+				m_outgoingUdpPorts= new PortMapping(GetOutgoingUdpPortRangeMin(), GetOutgoingUdpPortRangeMax());
+
+			return m_outgoingUdpPorts.BindOutgoingSocket(sock, ip, incomingPort);
 		}
 
 		// internal method(s)
@@ -512,7 +549,34 @@ namespace Sokgo.Socks5
 			}
 		}
 
-	}
+		protected static ushort[] ShufflePortRange(ushort portMin, ushort portMax)
+		{
+		//	if ((portMin == 1) && (portMax == ushort.MaxValue))
+		//		return [ 0x0000 ];
 
+			int portCount = (int)portMax - (int)portMin + 1;
+			IList<ushort> ports= new List<ushort>(Math.Max(0, (int)portMax - (int)portMin + 1));
+			for (ushort p= portMin; p <= portMax; p++)
+			{
+				ports.Add(p);
+			}
+
+			// shuffle
+			Random rnd = new Random();
+			for (int i= 0; i < portCount; i++)
+			{
+				int j= rnd.Next(portCount);
+				if (i != j)
+				{
+					ushort tmp = ports[i];
+					ports[i] = ports[j];
+					ports[j] = tmp;
+				}
+			}
+
+			return ports.ToArray();
+		}
+
+	}
 
 }

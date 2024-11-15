@@ -44,6 +44,7 @@ src_cs_wildcards=		\
 	Arguments/*.cs		\
 	Controller/*.cs		\
 	IPFilter/*.cs		\
+	PortMapping/*.cs	\
 	Properties/AssemblyInfo.cs	\
 	Socks5/*.cs
 src_dist_wildcards=		\
@@ -53,6 +54,7 @@ src_dist_wildcards=		\
 	Arguments/*			\
 	Controller/*		\
 	IPFilter/*			\
+	PortMapping/*		\
 	Properties/*		\
 	Socks5/*
 

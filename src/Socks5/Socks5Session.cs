@@ -27,7 +27,7 @@ using System.Threading;
 using System.IO;
 using System.Collections.Generic;
 using System.Collections;
-using Sokgo.IPFilter;
+using Sokgo.Filter;
 
 namespace Sokgo.Socks5
 {
@@ -435,7 +435,7 @@ namespace Sokgo.Socks5
 			m_state= Socks5SessionState.RequestReceived;
 
 			if ((!bFailed) && (endpReader.Status == Socks5IPEndPointReader.StatusCode.OK) &&
-				(cmd == Socks5Command.Connect) && (IPFilterLocal.Check(m_endpRemote.Address)))
+				(cmd == Socks5Command.Connect) && (!IPFilter.IsAllowed(m_endpRemote.Address)))
 			{
 				// local ip request (no dns)
 				bFailed= true;
@@ -497,7 +497,7 @@ namespace Sokgo.Socks5
 				return true;
 			}
 
-			if (IPFilterLocal.Check(_ev.Ip))
+			if (!IPFilter.IsAllowed(_ev.Ip))
 			{
 				// local ip request (localhost, etc)
 				m_result= Socks5Result.NotAllowed;
@@ -700,7 +700,7 @@ namespace Sokgo.Socks5
 			}
 		}
 
-		// inner classes
+		// inner class(es)/struct(s)
 		protected enum EventType
 		{
 			Init,

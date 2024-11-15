@@ -60,6 +60,20 @@ namespace Sokgo.Socks5
 			get { return (String)this["OutgoingHostIPv6"]; }
 		}
 
+		[ConfigurationProperty("OutgoingUdpPortRangeMin", DefaultValue= "32768", IsRequired= false)]
+		[IntegerValidator(MinValue = 1, MaxValue = 65535)]
+		public int OutgoingUdpPortRangeMin
+		{
+			get { return (int)this["OutgoingUdpPortRangeMin"]; }
+		}
+
+		[ConfigurationProperty("OutgoingUdpPortRangeMax", DefaultValue= "65535", IsRequired= false)]
+		[IntegerValidator(MinValue = 1, MaxValue = 65535)]
+		public int OutgoingUdpPortRangeMax
+		{
+			get { return (int)this["OutgoingUdpPortRangeMax"]; }
+		}
+
 		/*
 		[ConfigurationProperty("ConnectTimeout", DefaultValue= "300", IsRequired= false)]
 		[IntegerValidator(MinValue=60)]
@@ -95,6 +109,12 @@ namespace Sokgo.Socks5
 		public int SelectSocketMax
 		{
 			get { return (int)this["SelectSocketMax"]; }
+		}
+
+		[ConfigurationProperty("AllowProxyConnectionToLocalNetwork", DefaultValue= "False", IsRequired= false)]
+		public bool AllowProxyConnectionToLocalNetwork
+		{
+			get { return (bool)this["AllowProxyConnectionToLocalNetwork"]; }
 		}
 	}
 }

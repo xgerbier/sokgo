@@ -27,7 +27,7 @@ using System.Threading;
 using System.IO;
 using System.Collections.Generic;
 using System.Collections;
-using Sokgo.IPFilter;
+using Sokgo.Filter;
 
 namespace Sokgo.Socks5
 {
@@ -435,7 +435,7 @@ namespace Sokgo.Socks5
 			m_state= Socks5SessionState.RequestReceived;
 
 			if ((!bFailed) && (endpReader.Status == Socks5IPEndPointReader.StatusCode.OK) &&
-				(cmd == Socks5Command.Connect) && (IPFilterLocal.Check(m_endpRemote.Address)))
+				(cmd == Socks5Command.Connect) && (!IPFilter.IsAllowed(m_endpRemote.Address)))
 			{
 				// local ip request (no dns)
 				bFailed= true;
@@ -497,7 +497,7 @@ namespace Sokgo.Socks5
 				return true;
 			}
 
-			if (IPFilterLocal.Check(_ev.Ip))
+			if (!IPFilter.IsAllowed(_ev.Ip))
 			{
 				// local ip request (localhost, etc)
 				m_result= Socks5Result.NotAllowed;
@@ -548,7 +548,17 @@ namespace Sokgo.Socks5
 			   )
 				return false;
 
-			IPEndPoint endpLocal= (m_connector != null) ? m_connector.LocalToClientEndPoint : new IPEndPoint(IPAddress.Any, 0x0000);
+			IPEndPoint endpLocal;
+			IPEndPoint endpPublic;
+			if (m_connector != null)
+			{
+				endpLocal= m_connector.LocalToClientEndPoint;
+				endpPublic= m_connector.PublicLocalToClientEndPoint;
+			}
+			else
+			{
+				endpLocal= endpPublic= new IPEndPoint(IPAddress.Any, 0x0000);
+			}
 
 			NetworkStream stream= new NetworkStream(m_sockClient, false);
 
@@ -559,9 +569,9 @@ namespace Sokgo.Socks5
 
 			// SEND: [3]Address type; [4..]Address; [..]Port
 			Socks5IPEndPointWriter endpWriter= new Socks5IPEndPointWriter(new MemoryStream(m_data, 3, Socks5IPEndPointWriter.MAX_SIZE));
-			int nAddrLen= endpWriter.Write(endpLocal);
+			int nAddrLen= endpWriter.Write(endpPublic);
 
-			Trace.Debug ("[" + Thread.CurrentThread.GetHashCode() + "] Result \"" + m_result + "\" to " + m_sockClient.RemoteEndPoint + " - local " + endpLocal);
+			Trace.Debug ("[{0}] Result \"{1}\" to {2} - local bind {3} - public bind {4}", Thread.CurrentThread.GetHashCode(), m_result, m_sockClient.RemoteEndPoint, endpLocal, endpPublic);
 
 			stream.Write(m_data, 0, nAddrLen + 3);
 			if ((m_result != Socks5Result.Succeeded) || (m_connector == null) || (!m_connector.EndConnect()))
@@ -700,7 +710,7 @@ namespace Sokgo.Socks5
 			}
 		}
 
-		// inner classes
+		// inner class(es)/struct(s)
 		protected enum EventType
 		{
 			Init,

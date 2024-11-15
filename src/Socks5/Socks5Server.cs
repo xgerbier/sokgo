@@ -19,8 +19,6 @@
 */
 #endregion
 
-#define TRACE_SELECT
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,6 +30,9 @@ using System.Configuration;
 using System.Collections;
 using System.IO;
 using System.Reflection;
+using System.Linq;
+using Sokgo.Port;
+using Sokgo.SocketMono;
 
 namespace Sokgo.Socks5
 {
@@ -55,18 +56,36 @@ namespace Sokgo.Socks5
 		protected static Socks5ConfigSection m_cfgSection	= null;
 		protected static IPAddress m_ipListen				= null;
 		protected static IPAddress m_ipV6Listen				= null;
+		protected static IPAddress m_ipPublic				= null;
+		protected static IPAddress m_ipV6Public				= null;
 		protected static IPAddress m_ipOutgoing				= null;
 		protected static IPAddress m_ipV6Outgoing			= null;
 		protected static bool m_bIpListenDone				= false;
 		protected static bool m_bIpV6ListenDone				= false;
+		protected static bool m_bIpPublicDone				= false;
+		protected static bool m_bIpV6PublicDone				= false;
 		protected static bool m_bIpOutgoingDone				= false;
 		protected static bool m_bIpV6OutgoingDone			= false;
+		protected static object m_csIpListen				= new object();	// critical sections
+		protected static object m_csIpV6Listen				= new object();
+		protected static object m_csIpPublic				= new object();
+		protected static object m_csIpV6Public				= new object();
+		protected static object m_csIpOutgoing				= new object();
+		protected static object m_csIpV6Outgoing			= new object();
+		protected static object m_csListenUdpPortRange		= new object();
+		protected static object m_csOutgoingUdpPortPorts	= new object();
+		protected static PortRange							m_listenUdpPortRange = null;
+		protected static PortMapping						m_outgoingUdpPorts = null;
 		protected Socks5SocketList m_sockSelectReads		= new Socks5SocketList(SELECT_MIN_CAPACITY);
 
 		// constructor(s)
-		public Socks5Server()
+		static Socks5Server()
 		{
 			LoadConfig();
+		}
+
+		public Socks5Server()
+		{
 		}
 
 		// properties
@@ -130,20 +149,26 @@ namespace Sokgo.Socks5
 
 		public static IPAddress GetListenIPv4Address()
 		{
-			if (!m_bIpListenDone)
+			lock (m_csIpListen)
 			{
-				m_ipListen= GetIPAddress(Config.ListenHost, AddressFamily.InterNetwork);
-				m_bIpListenDone= true;
+				if (!m_bIpListenDone)
+				{
+					m_ipListen= GetIPAddress(Config.ListenHost, AddressFamily.InterNetwork);
+					m_bIpListenDone= true;
+				}
 			}
 			return m_ipListen;
 		}
 
 		public static IPAddress GetListenIPv6Address()
 		{
-			if (!m_bIpV6ListenDone)
+			lock (m_csIpV6Listen)
 			{
-				m_ipV6Listen= GetIPAddress(Config.ListenHostIPv6, AddressFamily.InterNetworkV6);
-				m_bIpV6ListenDone= true;
+				if (!m_bIpV6ListenDone)
+				{
+					m_ipV6Listen= GetIPAddress(Config.ListenHostIPv6, AddressFamily.InterNetworkV6);
+					m_bIpV6ListenDone= true;
+				}
 			}
 			return m_ipV6Listen;
 		}
@@ -153,24 +178,81 @@ namespace Sokgo.Socks5
 			return (af == AddressFamily.InterNetworkV6) ? GetListenIPv6Address() : GetListenIPv4Address();
 		}
 
+		public static ushort GetListenUdpPortRangeMin()
+		{
+			return (ushort)Config.ListenUdpPortRangeMin;
+		}
+
+		public static ushort GetListenUdpPortRangeMax()
+		{
+			return (ushort)Config.ListenUdpPortRangeMax;
+		}
+
+		public static PortRange GetListenUdpPortRange()
+		{
+			lock (m_csListenUdpPortRange)
+			{
+				if (m_listenUdpPortRange == null)
+					m_listenUdpPortRange= new PortRange(GetListenUdpPortRangeMin(), GetListenUdpPortRangeMax());
+			}
+			return m_listenUdpPortRange;
+		}
+
+		public static IPAddress GetPublicIPv4Address()
+		{
+			lock (m_csIpPublic)
+			{
+				if (!m_bIpPublicDone)
+				{
+					m_ipPublic= GetIPAddress(Config.PublicHost, AddressFamily.InterNetwork);
+					m_bIpPublicDone= true;
+				}
+			}
+			return m_ipPublic;
+		}
+
+		public static IPAddress GetPublicIPv6Address()
+		{
+			lock (m_csIpV6Public)
+			{
+				if (!m_bIpV6PublicDone)
+				{
+					m_ipV6Public= GetIPAddress(Config.PublicHostIPv6, AddressFamily.InterNetworkV6);
+					m_bIpV6PublicDone= true;
+				}
+			}
+			return m_ipV6Public;
+		}
+
+		public static IPAddress GetPublicAddress(AddressFamily af)
+		{
+			return (af == AddressFamily.InterNetworkV6) ? GetPublicIPv6Address() : GetPublicIPv4Address();
+		}
+
 		public static IPAddress GetOutgoingIPv4Address()
 		{
-			if (!m_bIpOutgoingDone)
+			lock (m_csIpOutgoing)
 			{
-				String strOutgoingHost= Config.OutgoingHost;
-				m_ipOutgoing= ((strOutgoingHost.Length > 0) ? GetIPAddress(strOutgoingHost, AddressFamily.InterNetwork) : GetListenIPv4Address());
-				m_bIpOutgoingDone= true;
+				if (!m_bIpOutgoingDone)
+				{
+					String strOutgoingHost= Config.OutgoingHost;
+					m_ipOutgoing= ((strOutgoingHost.Length > 0) ? GetIPAddress(strOutgoingHost, AddressFamily.InterNetwork) : GetListenIPv4Address());
+					m_bIpOutgoingDone= true;
+				}
 			}
 			return m_ipOutgoing;
 		}
 
 		public static IPAddress GetOutgoingIPv6Address()
 		{
-			if (!m_bIpV6OutgoingDone)
+			lock (m_csIpV6Outgoing)
 			{
-				String strOutgoingHostIPv6= Config.OutgoingHostIPv6;
-				m_ipV6Outgoing= ((strOutgoingHostIPv6.Length > 0) ? GetIPAddress(strOutgoingHostIPv6, AddressFamily.InterNetworkV6) : GetListenIPv6Address());
-				m_bIpV6OutgoingDone= true;
+				if (!m_bIpV6OutgoingDone)
+				{
+					String strOutgoingHostIPv6= Config.OutgoingHostIPv6;
+					m_ipV6Outgoing= ((strOutgoingHostIPv6.Length > 0) ? GetIPAddress(strOutgoingHostIPv6, AddressFamily.InterNetworkV6) : GetListenIPv6Address());
+					m_bIpV6OutgoingDone= true;
+				}
 			}
 			return m_ipV6Outgoing;
 		}
@@ -178,6 +260,26 @@ namespace Sokgo.Socks5
 		public static IPAddress GetOutgoingIPAddress(AddressFamily af)
 		{
 			return (af == AddressFamily.InterNetworkV6) ? GetOutgoingIPv6Address() : GetOutgoingIPv4Address();
+		}
+
+		public static ushort GetOutgoingUdpPortRangeMin()
+		{
+			return (ushort)Config.OutgoingUdpPortRangeMin;
+		}
+
+		public static ushort GetOutgoingUdpPortRangeMax()
+		{
+			return (ushort)Config.OutgoingUdpPortRangeMax;
+		}
+
+		public static bool BindOutgoingUdpSocket(Socket sock, IPAddress ip, IPEndPoint incomingPort)
+		{
+			lock (m_csOutgoingUdpPortPorts)
+			{
+				if (m_outgoingUdpPorts == null)
+					m_outgoingUdpPorts= new PortMapping(GetOutgoingUdpPortRangeMin(), GetOutgoingUdpPortRangeMax());
+			}
+			return m_outgoingUdpPorts.BindOutgoingSocket(sock, ip, incomingPort);
 		}
 
 		// internal method(s)
@@ -239,26 +341,8 @@ namespace Sokgo.Socks5
 				Trace.Log("enabled IPv6");
 				try
 				{
-					m_sockListenerIPv6= new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-					// Mono : System.Net.Sockets.SocketException (0x80004005): 'Address already in use' if socket is not ipv6 only (ipv4 already created)
-					#if MONO
-					bool ipV6Only = ((int)m_sockListenerIPv6.GetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only) != 0) ? true : false;
-					if (!ipV6Only)
-					{
-						#if MONO_LT_4_1
-
-						// Mono 2.8 (mono-2.8-ubuntu; .NET 2.0-4.0) and Mono < 4.1.0 : error System.Net.Sockets.SocketOptionName 0x1b (27) is not supported at IPv6 level
-						// SocketOptionName.IPv6Only not implemented (https://github.com/mono/mono/blob/2.8/mcs/class/System/System.Net.Sockets/SocketOptionName.cs)
-						if (Environment.OSVersion.Platform == PlatformID.Unix)
-							SokgoUnix.setsockopt(m_sockListenerIPv6, SocketOptionLevel.IPv6, SokgoUnix.IPV6_V6ONLY, true);
-
-						#else	// !MONO_LT_4_1
-
-						m_sockListenerIPv6.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, true);
-
-						#endif	// !MONO_LT_4_1
-					}
-					#endif	// MONO
+					m_sockListenerIPv6= new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp)
+						.SetSocketOptionIPv6Only_Mono(true);		// Mono : we DO NOT want SocketError.AddressAlreadyInUse to be thrown in Socket.Bind() for an IPv6 socket and IPv4 already created on the same port (IPv6Only = true)
 
 					m_sockListenerIPv6.Bind(new IPEndPoint(ipHostV6, nPort));
 					m_sockListenerIPv6.Listen(128);
@@ -271,6 +355,8 @@ namespace Sokgo.Socks5
 					return;
 				}
 			}
+			if (Config.AllowProxyConnectionToLocalNetwork)
+				Trace.Log("WARNING: proxy is allowing access to LAN (should only be used for debug purpose)");
 
 
 			while (m_bRunning)
@@ -363,7 +449,7 @@ namespace Sokgo.Socks5
 			return grpMin;
 		}
 
-		protected void TickForceGC(Object o)
+		protected void TickForceGC(object o)
 		{
 			if (!m_bRunning)
 				return;
@@ -377,7 +463,7 @@ namespace Sokgo.Socks5
 			*/
 		}
 
-		protected void TickShrinkList(Object o)
+		protected void TickShrinkList(object o)
 		{
 			if (!m_bRunning)
 				return;
@@ -397,7 +483,7 @@ namespace Sokgo.Socks5
 				m_cfgSection= new Socks5ConfigSection();
 		}
 
-		protected static IPAddress GetIPAddress(String strHost, AddressFamily af)
+		protected static IPAddress GetIPAddress(string strHost, AddressFamily af)
 		{
 			IPAddress ipHost= null;
 			if (strHost.Length > 0)
@@ -441,7 +527,7 @@ namespace Sokgo.Socks5
 			return ipHost;
 		}
 
-		protected static void TraceSockets(String strPrefix, ArrayList sockets)
+		protected static void TraceSockets(string strPrefix, ArrayList sockets)
 		{
 			if (sockets.Count == 0)
 			{
@@ -454,11 +540,11 @@ namespace Sokgo.Socks5
 			{
 				EndPoint epLocal= null;
 				EndPoint epRemote= null;
-				String strLocal= "";
-				String strRemote= "";
-				String strStatus= "";
+				string strLocal= "";
+				string strRemote= "";
+				string strStatus= "";
 
-				String strSocketInfo= "(null)";
+				string strSocketInfo= "(null)";
 
 				if (s != null)
 				{
@@ -513,6 +599,5 @@ namespace Sokgo.Socks5
 		}
 
 	}
-
 
 }

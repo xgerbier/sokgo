@@ -30,53 +30,72 @@ namespace Sokgo
 		// constants
 		protected static readonly char[] NEWLINE_CHARS= { '\n' };
 
+		protected enum WriteOutput
+		{
+			Console		= 0x01,
+			Debug		= 0x02,		// VS debug window
+			Syslog		= 0x04,		// Unix only
+		}
+
 		// data members
 		protected static bool m_bInitLog= false;
-		protected static Object m_csInitLog= new Object();
+		protected static object m_csInitLog= new object();
+		protected static bool m_bUseSyslog= true;
 
 		// methods
-		public static void Debug(String strFormat, params object[] objArgs)
+		public static void UseSyslog(bool useSyslog)
+		{
+			m_bUseSyslog= useSyslog;
+		}
+
+		public static void Debug(string strFormat, params object[] objArgs)
 		{
 			#if DEBUG
-			Write(true, strFormat, objArgs);
-			#endif
+			Write(WriteOutput.Console | WriteOutput.Debug, strFormat, objArgs);
+			#endif	// DEBUG
 		}
 
-		public static void Console(String strFormat, params object[] objArgs)
+		public static void Console(string strFormat, params object[] objArgs)
 		{
-			Write(true, strFormat, objArgs);
+			Write(WriteOutput.Console | WriteOutput.Debug, strFormat, objArgs);
 		}
 
-		public static void Log(String strFormat, params object[] objArgs)
+		public static void Log(string strFormat, params object[] objArgs)
 		{
-			Write(false, strFormat, objArgs);
+			Write(WriteOutput.Syslog | WriteOutput.Debug, strFormat, objArgs);
 		}
 
-		public static void Error(String strFormat, params object[] objArgs)
+		public static void Error(string strFormat, params object[] objArgs)
 		{
-			Write(false, strFormat, objArgs);
+			Write(WriteOutput.Console | WriteOutput.Syslog | WriteOutput.Debug, strFormat, objArgs);
 		}
 
 		// internal methods
-		protected static void Write(bool bForceConsole, String strFormat, params object[] objArgs)
+		protected static void Write(WriteOutput output, string strFormat, params object[] objArgs)
 		{
-			String strMsg= String.Format(strFormat, objArgs);
+			string strMsg= string.Format(strFormat, objArgs);
 
 			switch (Environment.OSVersion.Platform)
 			{
 				case PlatformID.Win32NT:
-					System.Diagnostics.Debug.WriteLine(strMsg);
-					if ((bForceConsole) && (SokgoWin32.GetConsoleWindow() != IntPtr.Zero))
+					if ((output & WriteOutput.Debug) != 0)
+						System.Diagnostics.Debug.WriteLine(strMsg);
+
+					// check not detached console (AttachConsole(-1))
+					if (((output & WriteOutput.Console) != 0) && (SokgoWin32.GetConsoleWindow() != IntPtr.Zero))
 						System.Console.WriteLine(strMsg);
 					break;
 
 				case PlatformID.Unix:
 				case PlatformID.MacOSX:
-					if (bForceConsole)
-					{
+					bool bOutputSyslog= m_bUseSyslog && ((output & WriteOutput.Syslog) != 0);
+					bool bOutputConsole= ((output & WriteOutput.Console) != 0) || ((!m_bUseSyslog) && ((output & WriteOutput.Syslog) != 0));	// fallback to console if syslog is explicitly disabled
+
+					// Note : System.Console.WriteLine() will also write to syslog if this is a running service (systemd)
+					if (bOutputConsole)
 						System.Console.WriteLine(strMsg);
-					}
-					else
+
+					if (bOutputSyslog)
 					{
 						lock (m_csInitLog)
 						{
@@ -88,8 +107,8 @@ namespace Sokgo
 							}
 						}
 
-						String[] strLines= strMsg.Split(NEWLINE_CHARS);
-						foreach (String str in strLines)
+						string[] strLines= strMsg.Split(NEWLINE_CHARS);
+						foreach (string str in strLines)
 							SokgoUnix.syslog(str);
 					}
 					break;

@@ -42,10 +42,39 @@ namespace Sokgo.Socks5
 			get { return (String)this["ListenHost"]; }
 		}
 
+		// Empty to disable IPv6
 		[ConfigurationProperty("ListenHostIPv6", DefaultValue= "", IsRequired= false)]
 		public String ListenHostIPv6
 		{
 			get { return (String)this["ListenHostIPv6"]; }
+		}
+
+		[ConfigurationProperty("ListenUdpPortRangeMin", DefaultValue= "32768", IsRequired= false)]
+		[IntegerValidator(MinValue = 1, MaxValue = 65535)]
+		public int ListenUdpPortRangeMin
+		{
+			get { return (int)this["ListenUdpPortRangeMin"]; }
+		}
+
+		[ConfigurationProperty("ListenUdpPortRangeMax", DefaultValue= "65535", IsRequired= false)]
+		[IntegerValidator(MinValue = 1, MaxValue = 65535)]
+		public int ListenUdpPortRangeMax
+		{
+			get { return (int)this["ListenUdpPortRangeMax"]; }
+		}
+
+		// Host to bind for the client in response of UDPAssociate
+		[ConfigurationProperty("PublicHost", DefaultValue= "", IsRequired= false)]
+		public String PublicHost
+		{
+			get { return (String)this["PublicHost"]; }
+		}
+
+		// IPv6 to bind for the client in response of UDPAssociate
+		[ConfigurationProperty("PublicHostIPv6", DefaultValue= "", IsRequired= false)]
+		public String PublicHostIPv6
+		{
+			get { return (String)this["PublicHostIPv6"]; }
 		}
 
 		[ConfigurationProperty("OutgoingHost", DefaultValue= "", IsRequired= false)]
@@ -58,6 +87,20 @@ namespace Sokgo.Socks5
 		public String OutgoingHostIPv6
 		{
 			get { return (String)this["OutgoingHostIPv6"]; }
+		}
+
+		[ConfigurationProperty("OutgoingUdpPortRangeMin", DefaultValue= "32768", IsRequired= false)]
+		[IntegerValidator(MinValue = 1, MaxValue = 65535)]
+		public int OutgoingUdpPortRangeMin
+		{
+			get { return (int)this["OutgoingUdpPortRangeMin"]; }
+		}
+
+		[ConfigurationProperty("OutgoingUdpPortRangeMax", DefaultValue= "65535", IsRequired= false)]
+		[IntegerValidator(MinValue = 1, MaxValue = 65535)]
+		public int OutgoingUdpPortRangeMax
+		{
+			get { return (int)this["OutgoingUdpPortRangeMax"]; }
 		}
 
 		/*
@@ -95,6 +138,18 @@ namespace Sokgo.Socks5
 		public int SelectSocketMax
 		{
 			get { return (int)this["SelectSocketMax"]; }
+		}
+
+		[ConfigurationProperty("AllowProxyConnectionToLocalNetwork", DefaultValue= "False", IsRequired= false)]
+		public bool AllowProxyConnectionToLocalNetwork
+		{
+			get { return (bool)this["AllowProxyConnectionToLocalNetwork"]; }
+		}
+
+		[ConfigurationProperty("TraceLogToSyslog", DefaultValue= "True", IsRequired= false)]
+		public bool TraceLogToSyslog
+		{
+			get { return (bool)this["TraceLogToSyslog"]; }
 		}
 	}
 }

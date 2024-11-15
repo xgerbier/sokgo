@@ -65,12 +65,17 @@
     <Compile Include="..\..\src\Controller\ControlServer.cs">
       <Link>Controller\ControlServer.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\IPFilter\IPFilter.cs" Link="IPFilter\IPFilter.cs" />
     <Compile Include="..\..\src\IPFilter\IPFilterLocal.cs">
       <Link>IPFilter\IPFilterLocal.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\PortMapping\PortMapping.cs" Link="PortMapping\PortMapping.cs" />
+    <Compile Include="..\..\src\PortMapping\PortRange.cs" Link="PortMapping\PortRange.cs" />
+    <Compile Include="..\..\src\PortMapping\SocketBindPortRange.cs" Link="PortMapping\SocketBindPortRange.cs" />
     <Compile Include="..\..\src\Properties\AssemblyInfo.cs">
       <Link>Properties\AssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\SocketMono.cs" Link="SocketMono.cs" />
     <Compile Include="..\..\src\Socks5\Socks5Config.cs">
       <Link>Socks5\Socks5Config.cs</Link>
     </Compile>
@@ -171,19 +176,7 @@
     -->
   <Target Name="UpdateBuildId" AfterTargets="BeforeBuild">
 	  <Message Text="Update BuildId ($(OS))" Importance="high" />
-	  <Exec Condition=" '$(OS)' == 'Windows_NT'" Command="
-      set FILE_SH=sh.exe
-      where %FILE_SH% &gt; NUL 2&gt; NUL
-      if errorlevel 1 (
-        for /D %%p in ( &quot;%ProgramFiles%\Git\bin&quot;, &quot;%ProgramFiles%\Git\cmd&quot;, &quot;%ProgramFiles(x86)%\Git\bin&quot;, &quot;%ProgramFiles(x86)%\Git\cmd&quot;, &quot;C:\MinGW\bin&quot; ) do (
-          if not defined SH if exist &quot;%%p\%FILE_SH%&quot; set SH=%%p\%FILE_SH%
-        )
-      ) else (
-        set SH=%FILE_SH%
-      )
-      if not defined SH ( echo Warning : &quot;%FILE_SH%&quot; not found. Failed to update BuildId.  &amp; exit /b 0 )
-      %SH% &quot;$(ProjectDir)../../src/Properties/BuildId-update.sh&quot;
-	    " />
+	  <Exec Condition=" '$(OS)' == 'Windows_NT'" Command="&#xD;&#xA;      set FILE_SH=sh.exe&#xD;&#xA;      where %FILE_SH% &gt; NUL 2&gt; NUL&#xD;&#xA;      if errorlevel 1 (&#xD;&#xA;        for /D %%p in ( &quot;%ProgramFiles%\Git\bin&quot;, &quot;%ProgramFiles%\Git\cmd&quot;, &quot;%ProgramFiles(x86)%\Git\bin&quot;, &quot;%ProgramFiles(x86)%\Git\cmd&quot;, &quot;C:\MinGW\bin&quot; ) do (&#xD;&#xA;          if not defined SH if exist &quot;%%p\%FILE_SH%&quot; set SH=%%p\%FILE_SH%&#xD;&#xA;        )&#xD;&#xA;      ) else (&#xD;&#xA;        set SH=%FILE_SH%&#xD;&#xA;      )&#xD;&#xA;      if not defined SH ( echo Warning : &quot;%FILE_SH%&quot; not found. Failed to update BuildId.  &amp; exit /b 0 )&#xD;&#xA;      %SH% &quot;$(ProjectDir)../../src/Properties/BuildId-update.sh&quot;&#xD;&#xA;	    " />
 	  <Exec Condition=" '$(OS)' == 'Unix'" Command="$(ProjectDir)../../src/Properties/BuildId-update.sh" />
   </Target>
 </Project>

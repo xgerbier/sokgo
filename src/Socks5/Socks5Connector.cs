@@ -59,6 +59,9 @@ namespace Sokgo.Socks5
 		public abstract IPEndPoint LocalToClientEndPoint { get; }
 		public abstract IPEndPoint LocalToRemoteEndPoint { get; }
 
+		public IPEndPoint PublicLocalToClientEndPoint { get => ToPublicEndPoint(LocalToClientEndPoint); }
+		public IPEndPoint PublicLocalToRemoteEndPoint { get => ToPublicEndPoint(LocalToRemoteEndPoint); }
+
 		public abstract Socket LocalToClientSocket { get; }
 		public abstract Socket LocalToRemoteSocket { get; }
 
@@ -90,6 +93,17 @@ namespace Sokgo.Socks5
 			}
 
 			return result;
+		}
+
+		// internal methods
+		protected IPEndPoint ToPublicEndPoint(IPEndPoint ipLocal)
+		{
+			if ((ipLocal.Address == IPAddress.Any) || (ipLocal.Address == IPAddress.IPv6Any) || (ipLocal.Port == 0x0000))
+				return ipLocal;
+
+			IPAddress ipPublicAddr= Socks5Server.GetPublicAddress(ipLocal.AddressFamily);
+			bool validIpPublic= (ipPublicAddr != null) && (ipPublicAddr != IPAddress.Any) && (ipPublicAddr != IPAddress.IPv6Any);
+			return (validIpPublic) ? new IPEndPoint(ipPublicAddr, ipLocal.Port) : ipLocal;
 		}
 	}
 }

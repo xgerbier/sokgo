@@ -37,15 +37,18 @@ namespace Sokgo
 	{
 		// consts
 
-		protected const String EXEC_MONO			= "mono";
-		protected const String EXEC_DOTNET			= "dotnet";
-		protected const String PARAM_START			= "start";
-		protected const String PARAM_SPAWN			= "daemon";
-		protected const String PARAM_STOP			= "stop";
-		protected const String PARAM_QUIET			= "quiet";
-		protected const String PARAM_VERSION		= "version";
-		protected const String PARAM_HELP			= "help";
-		protected const String PIDFILE				= "/var/run/sokgo.pid";
+		protected const String EXEC_UNIX_MONO			= "mono";
+		protected const String EXEC_UNIX_DOTNET			= "dotnet";
+		protected const String RUNTIME_ENV_MONO			= "mono";
+		protected const String RUNTIME_ENV_MONO_LT_4_1	= RUNTIME_ENV_MONO + "-lt4.1";
+		protected const String RUNTIME_ENV_DOTNET		= "dotnet";
+		protected const String PARAM_START				= "start";
+		protected const String PARAM_SPAWN				= "daemon";
+		protected const String PARAM_STOP				= "stop";
+		protected const String PARAM_QUIET				= "quiet";
+		protected const String PARAM_VERSION			= "version";
+		protected const String PARAM_HELP				= "help";
+		protected const String PIDFILE					= "/var/run/sokgo.pid";
 
 		// data members
 
@@ -55,6 +58,8 @@ namespace Sokgo
 
 		static void Main(string[] _args)
 		{
+			Trace.UseSyslog(Socks5Server.Config.TraceLogToSyslog);
+
 			Arguments args= new Arguments(_args);
 
 			bool bStart= (args[PARAM_START] != null);
@@ -241,9 +246,9 @@ namespace Sokgo
 			String strLinuxDotnetExe= pm?.FileName ?? "";
 
 			#if MONO
-			String strLinuxDefaultExe= EXEC_MONO;
+			String strLinuxDefaultExe= EXEC_UNIX_MONO;
 			#else	// !MONO
-			String strLinuxDefaultExe= EXEC_DOTNET;
+			String strLinuxDefaultExe= EXEC_UNIX_DOTNET;
 			#endif	// !MONO
 
 			return (strLinuxDotnetExe.Contains(strLinuxDefaultExe)) ? strLinuxDotnetExe : strLinuxDefaultExe;
@@ -263,6 +268,15 @@ namespace Sokgo
 
 			if (!string.IsNullOrEmpty(buildId))
 				sb.Append("-").Append(buildId);
+
+			#if MONO && MONO_LT_4_1
+			String strRuntimeEnv= RUNTIME_ENV_MONO_LT_4_1;
+			#elif MONO
+			String strRuntimeEnv= RUNTIME_ENV_MONO;
+			#else	// !MONO
+			String strRuntimeEnv= RUNTIME_ENV_DOTNET;
+			#endif	// !MONO
+			sb.Append("-").Append(strRuntimeEnv);
 
 			#if DEBUG
 			sb.Append(" [dbg]");

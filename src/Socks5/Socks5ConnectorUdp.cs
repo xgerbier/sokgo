@@ -19,6 +19,8 @@
 */
 #endregion
 
+#define TRACE_LOG_NAT
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,13 +30,15 @@ using System.Diagnostics;
 using System.Threading;
 using System.Collections;
 using System.IO;
-using Sokgo.IPFilter;
+using Sokgo.Filter;
+using Sokgo.Port;
+using Sokgo.SocketMono;
 
 namespace Sokgo.Socks5
 {
 	class Socks5ConnectorUdp : Socks5Connector
 	{
-		// inner class
+		// inner class(es)/struct(s)
 		protected class DataUdp
 		{
 			// data member(s)
@@ -162,7 +166,7 @@ namespace Sokgo.Socks5
 		protected Socks5ConnectorUdpClientState m_stateClient	= Socks5ConnectorUdpClientState.None;
 		protected LinkedList<DataUdp> m_dataClientWaitingDns	= new LinkedList<DataUdp>();
 		protected Queue<DataUdp> m_dataClientReadyDns			= new Queue<DataUdp>();
-		protected Object m_csDataClientDns						= new Object();		// critical section
+		protected object m_csDataClientDns						= new object();		// critical section
 		protected const int HEADER_IPV4_SIZE					= 10;			// SOCKS5 UDP header packet for IPv4: [0:2]Rsv; [2]Frag; [3]ATyp; [4:4]IPv4; [8:2]Port
 		protected const int HEADER_IPV6_SIZE					= 22;			// SOCKS5 UDP header packet for IPv6: [0:2]Rsv; [2]Frag; [3]ATyp; [4:16]IPv6; [20:2]Port
 		protected const int HEADER_DOMAIN_SIZE					= 262;			// SOCKS5 UDP header packet for IPv6: [0:2]Rsv; [2]Frag; [3]ATyp; [4:1]DomainSize; [5:255]Domain; [260:2]Port
@@ -223,14 +227,17 @@ namespace Sokgo.Socks5
 					ipaLocalToClient= ((IPEndPoint)m_sockUdpAssociate.LocalEndPoint).Address;
 				else
 					ipaLocalToClient= ipaListen;
-				Socket sockClient= new Socket(ipaListen.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-				sockClient.Bind(new IPEndPoint(ipaListen, 0x0000));
+				Socket sockClient= NewSocketUdp(ipaListen.AddressFamily);
+				sockClient.Bind(ipaListen, Socks5Server.GetListenUdpPortRange());
 				try
 				{
 					// optional : keep alive, if supported
-					sockClient.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+					m_sockUdpAssociate.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 				}
-				catch (SocketException) { }
+				catch (SocketException)
+				{
+					Trace.Debug("[" + Thread.CurrentThread.GetHashCode() + "]Socks5ConnectorUdp.Connect - TCP KeepAlive failed to 'UDP Associate' result bind socket: " + m_sockUdpAssociate.LocalEndPoint);
+				}
 				m_sock[CLIENT]= sockClient;
 				m_endpLocalToClient= new IPEndPoint(ipaLocalToClient, ((IPEndPoint)sockClient.LocalEndPoint).Port);
 				m_result= Socks5Result.Succeeded;
@@ -238,7 +245,6 @@ namespace Sokgo.Socks5
 				Trace.Debug("[" + Thread.CurrentThread.GetHashCode() + "]Socks5ConnectorUdp.Connect - Client UDP port: " + ((IPEndPoint)m_sock[CLIENT].LocalEndPoint).Port);
 
 				// NOTE: we ignore m_endpRemote (bind address in UDPAssociate). The endpoint may be the wanted UDP port to send packets. Most of Socks5 client implementations send the default '0.0.0.0:0'.
-				// In ReadFromClient() we match the UDP port used by the client. This is better to support P2P protocols.
 			}
 			catch (SocketException e)
 			{
@@ -394,6 +400,8 @@ namespace Sokgo.Socks5
 		}
 
 		// internal methods
+
+		// We use a consistent endpoint translation. The port from the client will be translated to a persistent outgoing port (chosen in UDP port range)
 		protected bool ReadFromClient()
 		{
 			DataUdp du= new DataUdp();
@@ -405,14 +413,14 @@ namespace Sokgo.Socks5
 			if (!((IPEndPoint)epFrom).Address.Equals(((IPEndPoint)m_sockUdpAssociate.RemoteEndPoint).Address))
 				return false;
 
-			// bind UDPClient for incoming packet from remote (same UDP port from client)
+			// bind UDPClient for incoming packet from remote
 			if (!BindRemote(((IPEndPoint)epFrom).Port))
 				return false;
 
 			// bind successful or already bound
 
 			// unwrap data/request dns for destination endpoint
-			if (!UnwrapDatagramFromClient(ref du))
+			if (!UnwrapDatagramFromClient(du))
 				return false;
 
 			lock (m_csDataClientDns)
@@ -423,7 +431,7 @@ namespace Sokgo.Socks5
 					m_dataClientReadyDns.Enqueue(du);
 			}
 
-			Trace.Debug("[{0}]Socks5SConnectorUdp.Read({1}); {2}({3}) bytes; {4} -> {5}", Thread.CurrentThread.GetHashCode(), GetSocketName(CLIENT), du.TotalSize, du.RawSize, epFrom, du.EndPoint);
+			Trace.Debug("[{0}]Socks5SConnectorUdp.Read({1}); {2}({3}) bytes; {4} -> {5}", Thread.CurrentThread.GetHashCode(), ToSocketName(CLIENT), du.TotalSize, du.RawSize, epFrom, du.EndPoint);
 
 			return (du.RawSize > 0);
 		}
@@ -440,7 +448,7 @@ namespace Sokgo.Socks5
 			m_dataRemote.EndPoint.Port= ((IPEndPoint)epFrom).Port;
 			m_stateRemote= Socks5ConnectorState.WriteWaiting;
 
-			Trace.Debug("[{0}]Socks5SConnectorUdp.Read({1}); {2} bytes; {3} -> {4}", Thread.CurrentThread.GetHashCode(), GetSocketName(s), m_dataRemote.RawSize, epFrom, m_endpClientToLocal);
+			Trace.Debug("[{0}]Socks5SConnectorUdp.Read({1}); {2} bytes; {3} -> {4}", Thread.CurrentThread.GetHashCode(), ToSocketName(s), m_dataRemote.RawSize, epFrom, m_endpClientToLocal);
 
 			return (m_dataRemote.RawSize > 0);
 		}
@@ -463,7 +471,7 @@ namespace Sokgo.Socks5
 			m_sock[CLIENT].SendTo(m_dataRemote.Data, m_dataRemote.HeaderStart, nTotalSize, SocketFlags.None, m_endpClientToLocal);
 			m_stateRemote= Socks5ConnectorState.ReadWaiting;
 
-			Trace.Debug("[{0}]Socks5SConnectorUdp.Write({1}); {2}({3}) bytes; {4} -> {5}", Thread.CurrentThread.GetHashCode(), GetSocketName(CLIENT), nTotalSize, m_dataRemote.RawSize, m_dataRemote.EndPoint, m_endpClientToLocal);
+			Trace.Debug("[{0}]Socks5SConnectorUdp.Write({1}); {2}({3}) bytes; {4} -> {5}", Thread.CurrentThread.GetHashCode(), ToSocketName(CLIENT), nTotalSize, m_dataRemote.RawSize, m_dataRemote.EndPoint, m_endpClientToLocal);
 
 			m_dataRemote.Reset();
 
@@ -485,58 +493,72 @@ namespace Sokgo.Socks5
 
 			if ( (du != null) && (du.RawSize != 0) &&
 				 (du.AddressFamily == ((s == REMOTE_IPV6) ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork)) &&
-				 (!IPFilterLocal.Check(du.EndPoint.Address))
+				 (IPFilter.IsAllowed(du.EndPoint.Address))
 			   )
 			{
 				m_sock[s].SendTo(du.Data, du.RawStart, du.RawSize, SocketFlags.None, du.EndPoint);
-				Trace.Debug("[{0}]Socks5SConnectorUdp.Write({1}); {2} bytes; {3} -> {4}", Thread.CurrentThread.GetHashCode(), GetSocketName(s), du.RawSize, m_endpClientToLocal, du.EndPoint);
+				Trace.Debug("[{0}]Socks5SConnectorUdp.Write({1}); {2} bytes; {3} -> {4}", Thread.CurrentThread.GetHashCode(), ToSocketName(s), du.RawSize, m_endpClientToLocal, du.EndPoint);
 			}
 
 			return true;
 		}
 
+		// Consistent endpoint translation
 		protected bool BindRemote(int nClientPort)
 		{
 			if ((nClientPort == 0x0000) || (m_sockUdpAssociate == null))
 				return false;
 
+			bool boundRemote = false;
+
 			// init sock local->remote
 			if (m_endpClientToLocal.Port == 0x0000)
 			{
+				// not bound yet
 				m_endpClientToLocal.Address= ((IPEndPoint)m_sockUdpAssociate.RemoteEndPoint).Address;
 				m_endpClientToLocal.Port= nClientPort;
 
-				Trace.Debug("[" + Thread.CurrentThread.GetHashCode() + "]Socks5ConnectorUdp.RecvCli - Remote UDP port: " + m_endpClientToLocal.Port);
+				Trace.Debug("[" + Thread.CurrentThread.GetHashCode() + "]Socks5ConnectorUdp.RecvCli - Client UDP port: " + m_endpClientToLocal.Port);
 
 				for (int s= REMOTE_IPV4; s <= REMOTE_IPV6; s++)
 				{
 					if (m_sock[s] == null)
 					{
-						AddressFamily af= (s == REMOTE_IPV6) ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
+						AddressFamily af= ToAddressFamily(s);
 						IPAddress ip= Socks5Server.GetOutgoingIPAddress(af);
 						if (ip != null)
 						{
-							try
+							Socket sockRemote= NewSocketUdp(af);
+							if (Socks5Server.BindOutgoingUdpSocket(sockRemote, ip, m_endpClientToLocal))
 							{
-								// bind on same port as the client
-								Socket sockRemote= new Socket(af, SocketType.Dgram, ProtocolType.Udp);
-								sockRemote.Bind(new IPEndPoint(ip, m_endpClientToLocal.Port));
 								m_sock[s]= sockRemote;
+								Trace.Debug("[{0}]Socks5ConnectorUdp.BindRemote - Remote UDP port: {1} [{2}]", Thread.CurrentThread.GetHashCode(), ((IPEndPoint)sockRemote.LocalEndPoint).Port, ToAddressFamilyShortName(af));
+								#if TRACE_LOG_NAT
+								Trace.Log("[{0}]UDP NAT: {1} <-> {2} <-> [{4}] {3}", Thread.CurrentThread.GetHashCode(), m_endpClientToLocal, m_endpLocalToClient, sockRemote.LocalEndPoint, ToAddressFamilyShortName(af));
+								#else	// TRACE_LOG_NAT
+								Trace.Debug("[{0}]UDP NAT: {1} <-> {2} <-> [{4}] {3}", Thread.CurrentThread.GetHashCode(), m_endpClientToLocal, m_endpLocalToClient, sockRemote.LocalEndPoint, ToAddressFamilyShortName(af));
+								#endif	// TRACE_LOG_NAT
+
+								boundRemote= true;
 							}
-							catch (SocketException /*e*/)
+							else
 							{
-								Trace.Debug("[" + Thread.CurrentThread.GetHashCode() + "]Socks5ConnectorUdp.RecvCli - Failed to bind UDP port: " + m_endpClientToLocal.Port + " [" + ((af == AddressFamily.InterNetworkV6) ? "IPv6" : "IPv4") + "]");
-								return false;
+								Trace.Debug("[{0}]Socks5ConnectorUdp.BindRemote - ERROR: Failed to bind remote UDP port (outgoing); Client: {1}", Thread.CurrentThread.GetHashCode(), m_endpClientToLocal.ToString());
 							}
 						}
 					}
 				}
 			}
+			else
+			{
+				// already bound
+				boundRemote= true;
+			}
 
-			return true;
+			return boundRemote;
 		}
 
-		protected bool UnwrapDatagramFromClient(ref DataUdp du)
+		protected bool UnwrapDatagramFromClient(DataUdp du)
 		{
 			if (du.RawStart != 0)
 			{
@@ -585,6 +607,14 @@ namespace Sokgo.Socks5
 			Debug.Assert(nHeaderSize == du.HeaderSize);
 		}
 
+		protected Socket NewSocketUdp(AddressFamily af)
+		{
+			Socket sock= new Socket(af, SocketType.Dgram, ProtocolType.Udp)
+				.SetSocketOptionReuseAddr_Mono(false)		// Mono : we DO want SocketError.AddressAlreadyInUse to be thrown in Socket.Bind() if a port in the range is already in use (ReuseAddr = false)
+				.SetSocketOptionIPv6Only_Mono(true);		// Mono : we DO NOT want SocketError.AddressAlreadyInUse to be thrown in Socket.Bind() for an IPv6 socket and IPv4 already created on the same port (IPv6Only = true)
+			return sock;
+		}
+
 		protected void DnsResponse(String strHost, IPAddress ip, Object objUserData)
 		{
 			Debug.Assert(objUserData is DataUdp);
@@ -607,12 +637,33 @@ namespace Sokgo.Socks5
 				m_session.Group.NotifyDnsResponse();
 		}
 
-		protected String GetSocketName(int s)
+		protected static String ToSocketName(int sockIndex)
 		{
-			if ((s < 0) || (s >= NB_SOCK))
-				return "" + s;
+			if ((sockIndex < 0) || (sockIndex >= NB_SOCK))
+				return "" + sockIndex;
 
-			return SOCK_NAME[s];
+			return SOCK_NAME[sockIndex];
+		}
+
+		protected static AddressFamily ToAddressFamily(int sockIndex)
+		{
+			AddressFamily af= AddressFamily.Unknown;
+			switch (sockIndex)
+			{
+				case REMOTE_IPV4:
+					af= AddressFamily.InterNetwork;
+					break;
+
+				case REMOTE_IPV6:
+					af= AddressFamily.InterNetworkV6;
+					break;
+			}
+			return af;
+		}
+
+		protected static String ToAddressFamilyShortName(AddressFamily af)
+		{
+			return (af == AddressFamily.InterNetworkV6) ? "IPv6" : "IPv4";
 		}
 	}
 }

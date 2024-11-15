@@ -92,12 +92,17 @@
     <Compile Include="..\..\src\Controller\ControlServer.cs">
       <Link>Controller\ControlServer.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\IPFilter\IPFilter.cs" Link="IPFilter\IPFilter.cs" />
     <Compile Include="..\..\src\IPFilter\IPFilterLocal.cs">
       <Link>IPFilter\IPFilterLocal.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\PortMapping\PortMapping.cs" Link="PortMapping\PortMapping.cs" />
+    <Compile Include="..\..\src\PortMapping\PortRange.cs" Link="PortMapping\PortRange.cs" />
+    <Compile Include="..\..\src\PortMapping\SocketBindPortRange.cs" Link="PortMapping\SocketBindPortRange.cs" />
     <Compile Include="..\..\src\Properties\AssemblyInfo.cs">
       <Link>Properties\AssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\SocketMono.cs" Link="SocketMono.cs" />
     <Compile Include="..\..\src\Socks5\Socks5Config.cs">
       <Link>Socks5\Socks5Config.cs</Link>
     </Compile>
@@ -154,12 +159,6 @@
     </None>
     <None Include="..\..\src\Properties\BuildId.cs.in">
       <Link>Properties\BuildId.cs.in</Link>
-    </None>
-    <None Include="..\..\src\Properties\AssemblyInfo-update.sh">
-      <Link>Properties\AssemblyInfo-update.sh</Link>
-    </None>
-    <None Include="..\..\src\Properties\AssemblyInfo.cs.in">
-      <Link>Properties\AssemblyInfo.cs.in</Link>
     </None>
     <Compile Include="..\..\src\Trace.cs">
       <Link>Trace.cs</Link>

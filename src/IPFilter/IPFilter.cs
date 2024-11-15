@@ -20,16 +20,35 @@
 #endregion
 
 using System;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using Sokgo.Socks5;
 
-[assembly: AssemblyTitle("Sokgo")]
-[assembly: AssemblyDescription("SOCKS5 Server")]
-[assembly: AssemblyCompany("X.Gerbier")]
-[assembly: AssemblyProduct("Sokgo")]
-[assembly: AssemblyCopyright("Copyright © X.Gerbier 2011,2012,2013,2024")]
-[assembly: ComVisible(false)]
-[assembly: Guid("4e70bcfe-b4c7-4dea-bf51-6ca3abe31630")]
-[assembly: AssemblyVersion("0.8.0.0")]
-[assembly: AssemblyFileVersion("0.8.0.0")]
+namespace Sokgo.Filter
+{
+	class IPFilter
+	{
+		// method(s)
+		public static bool IsAllowed(IPAddress ip)
+		{
+			bool allowed= true;
+			string reason= "";
+
+			if ((!Socks5Server.Config.AllowProxyConnectionToLocalNetwork) && (IPFilterLocal.IsLocal(ip)))
+			{
+				allowed= false;
+				reason= "Local";
+			}
+
+			// continue filtering
+			// if (allowed && (...)) { ... }
+
+			if (!allowed)
+				Trace.Debug("IPFilter - IP Address not allowed: {0} ({1})", ip.ToString(), reason);
+
+			return allowed;
+		}
+	}
+}

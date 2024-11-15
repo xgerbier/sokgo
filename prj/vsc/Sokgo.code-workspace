@@ -33,6 +33,8 @@
 			"optval",
 			"PIDFILE",
 			"Posix",
+			"REUSEADDR",
+			"REUSEPORT",
 			"setsid",
 			"setsockopt",
 			"sockfd",

@@ -19,8 +19,6 @@
 */
 #endregion
 
-#define TRACE_SELECT
-
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -49,17 +47,17 @@ namespace Sokgo.Socks5
 		protected Dictionary<Socket, Socks5Session> m_mapSockSession	= new Dictionary<Socket,Socks5Session>(SELECT_MIN_CAPACITY);
 		protected DateTime m_dtTrimSelect								= DateTime.Now;
 		protected DateTime m_dtLastError								= DateTime.Now;
-		protected Thread m_thread				= null;
-		protected bool m_bThreadRunning			= false;
-		protected Socket m_sockRecv				= null;					// 2 local sockets send/recv to internally interrupt select() when an external event occurs (ex: dns)
-		protected Socket m_sockSend				= null;					// or a session status change (ex: the socket lists awaiting read/write change)
-		protected byte[] m_dataSendSelect		= new byte[] { };
-		protected byte[] m_dataRecvSelect		= new byte[16];
-		protected EndPoint m_epRecvFrom			= new IPEndPoint(IPAddress.Any, 0);
-		protected int m_nSockSelectReadCount	= 0;
-		protected int m_nSockSelectWriteCount	= 0;
-		protected int m_nSockSelectErrorCount	= 0;
-		protected SocketError m_nLastError		= SocketError.Success;
+		protected Thread m_thread					= null;
+		protected bool m_bThreadRunning				= false;
+		protected Socket m_sockRecvInterruptSelect	= null;					// 2 local sockets send/recv to internally interrupt select() when an external event occurs (ex: dns)
+		protected Socket m_sockSendInterruptSelect	= null;					// or a session status change (ex: the socket lists awaiting read/write change)
+		protected byte[] m_dataSendInterruptSelect	= new byte[] { };
+		protected byte[] m_dataRecvInterruptSelect	= new byte[16];
+		protected EndPoint m_epRecvFrom				= new IPEndPoint(IPAddress.Any, 0);
+		protected int m_nSockSelectReadCount		= 0;
+		protected int m_nSockSelectWriteCount		= 0;
+		protected int m_nSockSelectErrorCount		= 0;
+		protected SocketError m_nLastError			= SocketError.Success;
 
 		// constructor(s)
 		public Socks5SessionGroup()
@@ -100,7 +98,7 @@ namespace Sokgo.Socks5
 					session.Stop();
 			}
 			m_bThreadRunning= false;
-			SendSockSelect();	// interrupt select() for closing
+			AsyncInterruptSocketSelect();	// interrupt Socket.Select() for closing
 		}
 
 		public void SessionStart(Socket socket)
@@ -126,7 +124,7 @@ namespace Sokgo.Socks5
 				m_sessions.Add(session);
 			}
 
-			SendSockSelect();	// interrupt select() to notify socket status changed in sessions
+			AsyncInterruptSocketSelect();	// interrupt Socket.Select() to notify socket status changed in sessions
 		}
 
 		public void SessionTrimExcess()
@@ -152,7 +150,7 @@ namespace Sokgo.Socks5
 
 		public void NotifyDnsResponse()
 		{
-			SendSockSelect();	// interrupt select() to notify socket status changed in sessions; force rebuild socket list for all sessions with Socks5Session.GetAwaitingReadSockets()/GetAwaitingWriteSockets()
+			AsyncInterruptSocketSelect();	// interrupt Socket.Select() to notify socket status changed in sessions; force rebuild socket list for all sessions with Socks5Session.GetAwaitingReadSockets()/GetAwaitingWriteSockets()
 		}
 
 		// internal method(s)
@@ -166,14 +164,14 @@ namespace Sokgo.Socks5
 				m_sessions.Remove(session);
 			}
 
-			SendSockSelect();	// interrupt select() to notify socket status changed in sessions; force rebuild socket list for all sessions with Socks5Session.GetAwaitingReadSockets()/GetAwaitingWriteSockets()
+			AsyncInterruptSocketSelect();	// interrupt Socket.Select() to notify socket status changed in sessions; force rebuild socket list for all sessions with Socks5Session.GetAwaitingReadSockets()/GetAwaitingWriteSockets()
 		}
 
 		protected void _Run()
 		{
-			m_sockSend= new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-			m_sockRecv= new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-			m_sockRecv.Bind(new IPEndPoint(IPAddress.Loopback, 0x0000));
+			m_sockSendInterruptSelect= new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+			m_sockRecvInterruptSelect= new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+			m_sockRecvInterruptSelect.Bind(new IPEndPoint(IPAddress.Loopback, 0x0000));
 
 			while (m_bThreadRunning)
 			{
@@ -193,7 +191,7 @@ namespace Sokgo.Socks5
 					m_dtTrimSelect= DateTime.Now;
 				}
 
-				m_sockSelectReads.Add(m_sockRecv);
+				m_sockSelectReads.Add(m_sockRecvInterruptSelect);
 
 				lock (m_sessions)
 				{
@@ -222,7 +220,7 @@ namespace Sokgo.Socks5
 					}
 				}
 
-				Trace.Debug("[{0}:{1}]Socks5SessionGroup._Run - reads={2} writes={3} sessions={4} load={5}",Thread.CurrentThread.GetHashCode(), Id, m_sockSelectReads.Count, m_sockSelectWrites.Count, m_sessions.Count, GetLoad());
+				Trace.Debug("[{0}:{1}]Socks5SessionGroup._Run - reads={2} writes={3} sessions={4} load={5}", Thread.CurrentThread.GetHashCode(), Id, m_sockSelectReads.Count, m_sockSelectWrites.Count, m_sessions.Count, GetLoad());
 
 				int nReads= m_sockSelectReads.Count;
 				int nWrites= m_sockSelectWrites.Count;
@@ -279,7 +277,7 @@ namespace Sokgo.Socks5
 
 				foreach (Socket sock in m_sockSelectReads.Except(m_sockSelectErrors))
 				{
-					if (sock == m_sockRecv)
+					if (sock == m_sockRecvInterruptSelect)
 					{
 						ReceiveSockSelect();
 					}
@@ -307,17 +305,25 @@ namespace Sokgo.Socks5
 			}
 		}
 
+		// Interrupt the current Socket.Select() by sending dummy data to m_sockSend.
+		// This will force the call to GetAwaitingReadSockets() and GetAwaitingWriteSockets() for the next Socket.Select() call
+		// Also give a chance to finish a closing session
+		protected bool AsyncInterruptSocketSelect()
+		{
+			return SendSockSelect();
+		}
+
 		protected bool SendSockSelect()
 		{
-			if ((m_sockSend == null) || (m_sockRecv == null))
+			if ((m_sockSendInterruptSelect == null) || (m_sockRecvInterruptSelect == null))
 				return false;
 
 			// SendSockSelect() can be called from various threads (DnsResponse() from Dns threads, group thread)
-			lock (m_sockSend)
+			lock (m_sockSendInterruptSelect)
 			{
 				try
 				{
-					m_sockSend.SendTo(m_dataSendSelect, m_sockRecv.LocalEndPoint);
+					m_sockSendInterruptSelect.SendTo(m_dataSendInterruptSelect, m_sockRecvInterruptSelect.LocalEndPoint);
 				}
 				catch (SocketException /*e*/)
 				{
@@ -329,12 +335,12 @@ namespace Sokgo.Socks5
 
 		protected bool ReceiveSockSelect()
 		{
-			if (m_sockRecv == null)
+			if (m_sockRecvInterruptSelect == null)
 				return false;
 
 			try
 			{
-				m_sockRecv.ReceiveFrom(m_dataRecvSelect, ref m_epRecvFrom);
+				m_sockRecvInterruptSelect.ReceiveFrom(m_dataRecvInterruptSelect, ref m_epRecvFrom);
 			}
 			catch (SocketException /*e*/)
 			{
